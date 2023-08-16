@@ -9,63 +9,50 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.models.User;
 import ru.kata.spring.boot_security.demo.repositories.UserRepository;
-
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
-    private final UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    @Lazy
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    public UserServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    @Autowired
-    public void setPasswordEncoder(@Lazy PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-    }
-
     @Override
-    public List<User> getAllUsers() {
+    public List<User> getUsers() {
         return userRepository.findAll();
     }
 
     @Override
-    public User findUserById(Long id) {
-        return userRepository.getOne(id);
-    }
-
-    @Override
-    public User findByUsername(String username) {
-        return userRepository.findByUsername(username);
-    }
-
-    @Override
     @Transactional
-    public void saveUser(User user) {
+    public void save(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
 
     @Override
+    public User getUser(long id) {
+        return userRepository.getById(id);
+    }
+
+    @Override
     @Transactional
-    public void deleteById(Long id) {
+    public void deleteUser(long id) {
         userRepository.deleteById(id);
     }
 
-
-    public User findByUserName(String username) {
+    public User findByUsername(String username) { //обертка над методом репозитория
         return userRepository.findByUsername(username);
     }
 
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = findByUserName(username);
+    public UserDetails loadUserByUsername(String name) throws UsernameNotFoundException {
+        User user = findByUsername(name);
         if (user == null) {
-            throw new UsernameNotFoundException(String.format("User '%s' not found", username));
+            throw new UsernameNotFoundException(String.format("User '%s' not found", name));
         }
         return user;
     }
